@@ -1664,7 +1664,7 @@ string YulUtilFunctions::allocateAndInitializeMemoryStructFunction(StructType co
 		templ("functionName", functionName);
 		templ("alloc", allocationFunction());
 
-		TypePointers const& members = _type.memoryMemberTypes();
+		auto members = _type.memoryMemberTypes();
 		templ("allocSize", _type.memoryDataSize().str());
 
 		vector<map<string, string>> memberParams(members.size());

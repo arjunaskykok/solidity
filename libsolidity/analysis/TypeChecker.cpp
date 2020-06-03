@@ -348,6 +348,7 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			m_errorReporter.typeError(5587_error, _function.location(), "Internal functions cannot be payable.");
 	}
 	auto checkArgumentAndReturnParameter = [&](VariableDeclaration const& var) {
+		// TODO In breaking, should get replaced by containsNestedMapping()
 		if (type(var)->category() == Type::Category::Mapping)
 		{
 			if (var.referenceLocation() != VariableDeclaration::Location::Storage)
@@ -364,7 +365,8 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 		}
 		else
 		{
-			if (!type(var)->canLiveOutsideStorage() && _function.isPublic())
+			solAssert(type(var)->nameable(), "");
+			if (type(var)->containsNestedMapping() && _function.isPublic())
 				m_errorReporter.typeError(3312_error, var.location(), "Type is required to live outside storage.");
 			if (_function.isPublic())
 			{
@@ -510,8 +512,9 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 
 	if (!_variable.isStateVariable())
 	{
+		solAssert(type(_variable)->nameable(), "");
 		if (varType->dataStoredIn(DataLocation::Memory) || varType->dataStoredIn(DataLocation::CallData))
-			if (!varType->canLiveOutsideStorage())
+			if (varType->containsNestedMapping())
 				m_errorReporter.typeError(4061_error, _variable.location(), "Type " + varType->toString() + " is only valid in storage.");
 	}
 	else if (_variable.visibility() >= Visibility::Public)
@@ -621,9 +624,10 @@ bool TypeChecker::visit(EventDefinition const& _eventDef)
 	unsigned numIndexed = 0;
 	for (ASTPointer<VariableDeclaration> const& var: _eventDef.parameters())
 	{
+		solAssert(type(*var)->nameable(), "");
 		if (var->isIndexed())
 			numIndexed++;
-		if (!type(*var)->canLiveOutsideStorage())
+		if (type(*var)->containsNestedMapping())
 			m_errorReporter.typeError(3448_error, var->location(), "Type is required to live outside storage.");
 		if (!type(*var)->interfaceType(false))
 			m_errorReporter.typeError(3417_error, var->location(), "Internal or recursive type is not allowed as event parameter type.");
@@ -1540,7 +1544,7 @@ bool TypeChecker::visit(TupleExpression const& _tuple)
 					_tuple.location(),
 					"Unable to deduce nameable type for array elements. Try adding explicit type conversion for the first element."
 				);
-			else if (!inlineArrayType->canLiveOutsideStorage())
+			else if (inlineArrayType->containsNestedMapping())
 				m_errorReporter.fatalTypeError(1545_error, _tuple.location(), "Type " + inlineArrayType->toString() + " is only valid in storage.");
 
 			_tuple.annotation().type = TypeProvider::array(DataLocation::Memory, inlineArrayType, types.size());
@@ -2046,22 +2050,7 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 
 			// Extend error message in case we try to construct a struct with mapping member.
 			if (isStructConstructorCall)
-			{
-				/// For error message: Struct members that were removed during conversion to memory.
-				TypePointer const expressionType = type(_functionCall.expression());
-				auto const& t = dynamic_cast<TypeType const&>(*expressionType);
-				auto const& structType = dynamic_cast<StructType const&>(*t.actualType());
-				set<string> membersRemovedForStructConstructor = structType.membersMissingInMemory();
-
-				if (!membersRemovedForStructConstructor.empty())
-				{
-					msg += " Members that have to be skipped in memory:";
-					for (auto const& member: membersRemovedForStructConstructor)
-						msg += " " + member;
-				}
-
 				return { isVariadic ? 1123_error : 9755_error, msg };
-			}
 			else if (
 				_functionType->kind() == FunctionType::Kind::BareCall ||
 				_functionType->kind() == FunctionType::Kind::BareCallCode ||
@@ -2531,7 +2520,8 @@ void TypeChecker::endVisit(NewExpression const& _newExpression)
 	}
 	else if (type->category() == Type::Category::Array)
 	{
-		if (!type->canLiveOutsideStorage())
+		solAssert(type->nameable(), "");
+		if (type->containsNestedMapping())
 			m_errorReporter.fatalTypeError(
 				1164_error,
 				_newExpression.typeName().location(),
