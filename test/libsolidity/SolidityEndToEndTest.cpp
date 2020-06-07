@@ -3465,53 +3465,6 @@ BOOST_AUTO_TEST_CASE(array_copy_calldata_storage)
 	ABI_CHECK(callContractFunction("retrieve()"), encodeArgs(9, 28, 9, 28, 4, 3, 32));
 }
 
-BOOST_AUTO_TEST_CASE(array_copy_including_mapping)
-{
-	char const* sourceCode = R"(
-		contract c {
-			mapping(uint=>uint)[90][] large;
-			mapping(uint=>uint)[3][] small;
-			function test() public returns (uint r) {
-				for (uint i = 0; i < 7; i++) {
-					large.push();
-					small.push();
-				}
-				large[3][2][0] = 2;
-				large[1] = large[3];
-				small[3][2][0] = 2;
-				small[1] = small[2];
-				r = ((
-					small[3][2][0] * 0x100 |
-					small[1][2][0]) * 0x100 |
-					large[3][2][0]) * 0x100 |
-					large[1][2][0];
-				delete small;
-				delete large;
-
-			}
-			function clear() public returns (uint, uint) {
-				for (uint i = 0; i < 7; i++) {
-					large.push();
-					small.push();
-				}
-				small[3][2][0] = 0;
-				large[3][2][0] = 0;
-				while (small.length > 0)
-					small.pop();
-				while (large.length > 0)
-					large.pop();
-				return (small.length, large.length);
-			}
-		}
-	)";
-	compileAndRun(sourceCode);
-	ABI_CHECK(callContractFunction("test()"), encodeArgs(0x02000200));
-	// storage is not empty because we cannot delete the mappings
-	BOOST_CHECK(!storageEmpty(m_contractAddress));
-	ABI_CHECK(callContractFunction("clear()"), encodeArgs(0, 0));
-	BOOST_CHECK(storageEmpty(m_contractAddress));
-}
-
 //BOOST_AUTO_TEST_CASE(assignment_to_const_array_vars)
 //{
 //	char const* sourceCode = R"(

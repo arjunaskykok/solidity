@@ -7,13 +7,15 @@ Breaking changes:
  * JSON AST: Removes members with ``null`` value from JSON output.
  * Type Checker: Disallow shifts by signed types.
  * Type Checker: Exponentiation and shifts of literals by non-literals will always use ``uint256`` or ``int256`` as a type.
+ * Type Checker: Disallows structs and arrays that contains a nested mapping and lives in memory or calldata.
+ * Type Checker: Disallows assignments to state variables that contains a nested mapping.
 
 Language Features:
  * Yul: Disallow EVM instruction `pc()`.
 
 
 Compiler Features:
-
+ * General: The function ``Type::canLiveOutsideStorage()`` is replaced by ``Type::containsNestedMapping()``.
 
 Bugfixes:
  * NatSpec: Constructors and functions have consistent userdoc output.

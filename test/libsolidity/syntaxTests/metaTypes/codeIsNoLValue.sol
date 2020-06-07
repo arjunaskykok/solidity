@@ -7,4 +7,3 @@ contract Test {
 contract C {}
 // ----
 // TypeError: (55-75): Expression has to be an lvalue.
-// TypeError: (100-119): Expression has to be an lvalue.

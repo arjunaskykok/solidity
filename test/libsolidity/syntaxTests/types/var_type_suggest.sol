@@ -10,7 +10,6 @@ contract C {
         var i = 31415;
         var t = "string";
         var g2 = g;
-        var myblockhash = block.blockhash;
         var (a, b) = (2, "troi");
         var (x,, z) = h();
         var (c, d) = ("");
@@ -24,7 +23,6 @@ contract C {
 // SyntaxError: (248-261): Use of the "var" keyword is disallowed. Use explicit declaration `uint16 i = ...´ instead.
 // SyntaxError: (271-287): Use of the "var" keyword is disallowed. Use explicit declaration `string memory t = ...´ instead.
 // SyntaxError: (297-307): Use of the "var" keyword is disallowed. Use explicit declaration `function (uint256) pure returns (uint256) g2 = ...´ instead.
-// SyntaxError: (317-350): Use of the "var" keyword is disallowed. Type cannot be expressed in syntax.
-// SyntaxError: (360-384): Use of the "var" keyword is disallowed. Use explicit declaration `(uint8 a, string memory b) = ...´ instead.
-// SyntaxError: (394-411): Use of the "var" keyword is disallowed. Use explicit declaration `(uint256 x, , uint256 z) = ...´ instead.
-// TypeError: (421-438): Different number of components on the left hand side (2) than on the right hand side (1).
+// SyntaxError: (317-341): Use of the "var" keyword is disallowed. Use explicit declaration `(uint8 a, string memory b) = ...´ instead.
+// SyntaxError: (351-368): Use of the "var" keyword is disallowed. Use explicit declaration `(uint256 x, , uint256 z) = ...´ instead.
+// TypeError: (378-395): Different number of components on the left hand side (2) than on the right hand side (1).
