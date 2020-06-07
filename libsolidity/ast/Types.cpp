@@ -1960,7 +1960,7 @@ TypeResult ArrayType::interfaceType(bool _inLibrary) const
 
 Type const* ArrayType::finalBaseType(bool breakIfDynamicArrayType) const
 {
-	auto finalBaseType = baseType();
+	Type const* finalBaseType = this;
 
 	while (auto arrayType = dynamic_cast<ArrayType const*>(finalBaseType))
 	{
@@ -3600,7 +3600,7 @@ TypeResult MappingType::interfaceType(bool _inLibrary) const
 		}
 	}
 	else
-		return TypeResult::err("Only libraries are allowed to use the mapping type in public or external functions.");
+		return TypeResult::err("Only libraries are allowed to use a (nested) mapping type in public or external functions.");
 
 	return this;
 }

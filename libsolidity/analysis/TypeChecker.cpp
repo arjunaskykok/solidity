@@ -366,8 +366,16 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 		else
 		{
 			solAssert(type(var)->nameable(), "");
-			if (type(var)->containsNestedMapping() && _function.isPublic())
-				m_errorReporter.typeError(3312_error, var.location(), "Type is required to live outside storage.");
+			if (
+				type(var)->containsNestedMapping() &&
+				_function.isPublic() &&
+				!isLibraryFunction
+			)
+				m_errorReporter.typeError(
+					3312_error,
+					var.location(),
+					"Types containing (nested) mappings can only be used in storage."
+				);
 			if (_function.isPublic())
 			{
 				auto iType = type(var)->interfaceType(isLibraryFunction);
@@ -515,7 +523,11 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		solAssert(type(_variable)->nameable(), "");
 		if (varType->dataStoredIn(DataLocation::Memory) || varType->dataStoredIn(DataLocation::CallData))
 			if (varType->containsNestedMapping())
-				m_errorReporter.typeError(4061_error, _variable.location(), "Type " + varType->toString() + " is only valid in storage.");
+				m_errorReporter.fatalTypeError(
+					4061_error,
+					_variable.location(),
+					"Type " + varType->toString(true) + " is only valid in storage."
+				);
 	}
 	else if (_variable.visibility() >= Visibility::Public)
 	{
@@ -1400,7 +1412,7 @@ void TypeChecker::checkExpressionAssignment(Type const& _type, Expression const&
 				checkExpressionAssignment(*types[i], *tupleExpression->components()[i]);
 			}
 	}
-	else if (_type.category() == Type::Category::Mapping)
+	else if (_type.containsNestedMapping())
 	{
 		bool isLocalOrReturn = false;
 		if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
@@ -1408,7 +1420,7 @@ void TypeChecker::checkExpressionAssignment(Type const& _type, Expression const&
 				if (variableDeclaration->isLocalOrReturn())
 					isLocalOrReturn = true;
 		if (!isLocalOrReturn)
-			m_errorReporter.typeError(9214_error, _expression.location(), "Mappings cannot be assigned to.");
+			m_errorReporter.typeError(9214_error, _expression.location(), "Types in storage containing (nested) mappings cannot be assigned to.");
 	}
 }
 
@@ -1545,7 +1557,11 @@ bool TypeChecker::visit(TupleExpression const& _tuple)
 					"Unable to deduce nameable type for array elements. Try adding explicit type conversion for the first element."
 				);
 			else if (inlineArrayType->containsNestedMapping())
-				m_errorReporter.fatalTypeError(1545_error, _tuple.location(), "Type " + inlineArrayType->toString() + " is only valid in storage.");
+				m_errorReporter.fatalTypeError(
+					1545_error,
+					_tuple.location(),
+					"Type " + inlineArrayType->toString(true) + " is only valid in storage."
+				);
 
 			_tuple.annotation().type = TypeProvider::array(DataLocation::Memory, inlineArrayType, types.size());
 		}
@@ -2270,6 +2286,15 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 
 		if (actualType->category() == Type::Category::Struct)
 		{
+			if (actualType->containsNestedMapping())
+			{
+				m_errorReporter.fatalTypeError(
+					0000_error,
+					_functionCall.location(),
+					"Struct containing (nested) mappings cannot be constructed."
+				);
+				break;
+			}
 			functionType = dynamic_cast<StructType const&>(*actualType).constructorType();
 			funcCallAnno.kind = FunctionCallKind::StructConstructorCall;
 			funcCallAnno.isPure = argumentsArePure;
@@ -3231,6 +3256,8 @@ void TypeChecker::requireLValue(Expression const& _expression, bool _ordinaryAss
 	if (_expression.annotation().isLValue)
 		return;
 
+	bool fatal = false;
+
 	auto [errorId, description] = [&]() -> tuple<ErrorId, string> {
 		if (_expression.annotation().isConstant)
 			return { 6520_error, "Cannot assign to a constant variable." };
@@ -3261,8 +3288,12 @@ void TypeChecker::requireLValue(Expression const& _expression, bool _ordinaryAss
 				if (varDecl->isExternalCallableParameter() && dynamic_cast<ReferenceType const*>(identifier->annotation().type))
 					return { 7128_error, "External function arguments of reference type are read-only." };
 
+		fatal = true;
 		return { 4247_error, "Expression has to be an lvalue." };
 	}();
 
-	m_errorReporter.typeError(errorId, _expression.location(), description);
+	if (fatal)
+		m_errorReporter.fatalTypeError(errorId, _expression.location(), description);
+	else
+		m_errorReporter.typeError(errorId, _expression.location(), description);
 }
