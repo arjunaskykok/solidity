@@ -2202,7 +2202,6 @@ unsigned StructType::calldataEncodedSize(bool) const
 	unsigned size = 0;
 	for (auto const& member: members(nullptr))
 	{
-		solAssert(member.type->nameable(), "");
 		solAssert(!member.type->containsNestedMapping(), "");
 		// Struct members are always padded.
 		size += member.type->calldataEncodedSize();
@@ -2218,7 +2217,6 @@ unsigned StructType::calldataEncodedTailSize() const
 	unsigned size = 0;
 	for (auto const& member: members(nullptr))
 	{
-		solAssert(member.type->nameable(), "");
 		solAssert(!member.type->containsNestedMapping(), "");
 		// Struct members are always padded.
 		size += member.type->calldataHeadSize();
@@ -2231,7 +2229,6 @@ unsigned StructType::calldataOffsetOfMember(std::string const& _member) const
 	unsigned offset = 0;
 	for (auto const& member: members(nullptr))
 	{
-		solAssert(member.type->nameable(), "");
 		solAssert(!member.type->containsNestedMapping(), "");
 		if (member.name == _member)
 			return offset;

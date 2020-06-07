@@ -95,7 +95,7 @@ bool DeclarationTypeChecker::visit(StructDefinition const& _struct)
 		if (member->type()->category() == Type::Category::Mapping)
 			hasNestedMapping = true;
 		else if (auto arrayType = dynamic_cast<ArrayType const*>(member->type()))
-			if(arrayType->finalBaseType(false)->category() == Type::Category::Mapping)
+			if (arrayType->finalBaseType(false)->category() == Type::Category::Mapping)
 				hasNestedMapping = true;
 
 		if (m_recursiveStructSeen)

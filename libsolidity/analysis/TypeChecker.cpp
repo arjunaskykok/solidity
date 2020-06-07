@@ -337,7 +337,7 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 		if (_function.visibility() == Visibility::Private)
 			m_errorReporter.typeError(3942_error, _function.location(), "\"virtual\" and \"private\" cannot be used together.");
 		if (isLibraryFunction)
-			m_errorReporter.typeError(1878_error, _function.location(), "Library functions cannot be \"virtual\".");
+			m_errorReporter.typeError(4465_error, _function.location(), "Library functions cannot be \"virtual\".");
 	}
 
 	if (_function.isPayable())
@@ -348,7 +348,6 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			m_errorReporter.typeError(5587_error, _function.location(), "Internal functions cannot be payable.");
 	}
 	auto checkArgumentAndReturnParameter = [&](VariableDeclaration const& var) {
-		// TODO In breaking, should get replaced by containsNestedMapping()
 		if (type(var)->category() == Type::Category::Mapping)
 		{
 			if (var.referenceLocation() != VariableDeclaration::Location::Storage)
@@ -365,7 +364,6 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 		}
 		else
 		{
-			solAssert(type(var)->nameable(), "");
 			if (
 				type(var)->containsNestedMapping() &&
 				_function.isPublic() &&
@@ -520,7 +518,6 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 
 	if (!_variable.isStateVariable())
 	{
-		solAssert(type(_variable)->nameable(), "");
 		if (varType->dataStoredIn(DataLocation::Memory) || varType->dataStoredIn(DataLocation::CallData))
 			if (varType->containsNestedMapping())
 				m_errorReporter.fatalTypeError(
@@ -636,7 +633,6 @@ bool TypeChecker::visit(EventDefinition const& _eventDef)
 	unsigned numIndexed = 0;
 	for (ASTPointer<VariableDeclaration> const& var: _eventDef.parameters())
 	{
-		solAssert(type(*var)->nameable(), "");
 		if (var->isIndexed())
 			numIndexed++;
 		if (type(*var)->containsNestedMapping())
@@ -2064,7 +2060,6 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 				toString(parameterTypes.size()) +
 				".";
 
-			// Extend error message in case we try to construct a struct with mapping member.
 			if (isStructConstructorCall)
 				return { isVariadic ? 1123_error : 9755_error, msg };
 			else if (
@@ -2289,7 +2284,7 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 			if (actualType->containsNestedMapping())
 			{
 				m_errorReporter.fatalTypeError(
-					0000_error,
+					9515_error,
 					_functionCall.location(),
 					"Struct containing (nested) mappings cannot be constructed."
 				);
@@ -2545,7 +2540,6 @@ void TypeChecker::endVisit(NewExpression const& _newExpression)
 	}
 	else if (type->category() == Type::Category::Array)
 	{
-		solAssert(type->nameable(), "");
 		if (type->containsNestedMapping())
 			m_errorReporter.fatalTypeError(
 				1164_error,

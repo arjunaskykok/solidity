@@ -847,7 +847,6 @@ public:
 	unsigned calldataEncodedTailSize() const override { return 32; }
 	bool isDynamicallySized() const override { return true; }
 	bool isDynamicallyEncoded() const override { return true; }
-	bool containsNestedMapping() const override { return m_arrayType.containsNestedMapping(); }
 	std::string toString(bool _short) const override;
 	TypePointer mobileType() const override;
 

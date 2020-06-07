@@ -1069,7 +1069,6 @@ void CompilerUtils::convertType(
 					// stack: <memory ptr> <source ref> <memory ptr>
 					for (auto const& member: typeOnStack->members(nullptr))
 					{
-						solAssert(member.type->nameable(), "");
 						solAssert(!member.type->containsNestedMapping(), "");
 						pair<u256, unsigned> const& offsets = typeOnStack->storageOffsetsOfMember(member.name);
 						_context << offsets.first << Instruction::DUP3 << Instruction::ADD;
